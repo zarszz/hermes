@@ -1,5 +1,5 @@
 # profile
-Name : Ganjar Gingin Tahyudin
+Name : Ganjar Gingin Tahyudin <br/>
 Linkedin : https://www.linkedin.com/in/ganjarggt/
 
 # hermes
