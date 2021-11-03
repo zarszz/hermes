@@ -3,6 +3,7 @@ package controllers
 import (
 	"hermes/controllers/entity"
 	"hermes/models/product/repo"
+	"hermes/utils"
 	"net/http"
 	"strconv"
 
@@ -21,134 +22,80 @@ func NewProduct(conn *sqlx.DB) *Product {
 
 func (s *Product) Get(c *gin.Context) {
 	products, err := s.productService.GetAll()
-	if err != nil {		
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"message": err.Error()},
-		)
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		gin.H{"products": &products.Products},
-	)
+	utils.HandleResponse(c, "successfully retrieve products", http.StatusOK, c.Request.Method, products.Products)
 }
 
 func (s *Product) GetByPK(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	product, err := s.productService.GetByPK(id)
-	if err != nil {		
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"message": err.Error()},
-		)
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
 	if product == nil {
-		c.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"message": "product not found",
-			},
-		)
+		utils.HandleErrorResponse(c, http.StatusNotFound, c.Request.Method, "product not found")
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		gin.H{"product": product},
-	)
+	utils.HandleResponse(c, "successfully retrieve product", http.StatusOK, c.Request.Method, product)
 }
 
 func (s *Product) Create(c *gin.Context) {
 	var form entity.ProductInput
-	if c.ShouldBindWith(&form, binding.JSON) != nil {
-		c.JSON(
-			http.StatusNotAcceptable,
-			gin.H{"message": "invalid data"},
-		)
-		c.Abort()
+	if err := c.ShouldBindWith(&form, binding.JSON); err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
 		return
 	}
 	err := s.productService.InsertOne(form)
-	if err != nil {		
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"message": err.Error()},
-		)
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		gin.H{"message": "successfully created"},
-	)
+	utils.HandleResponse(c, "successfully created", http.StatusCreated, c.Request.Method, "")
 }
 
 func (s *Product) Update(c *gin.Context) {
 	var form entity.ProductInput
 	id := c.Param("id")
-	if c.ShouldBindWith(&form, binding.JSON) != nil {
-		c.JSON(
-			http.StatusNotAcceptable,
-			gin.H{"message": "invalid data"},
-		)
-		c.Abort()
+	if err := c.ShouldBindWith(&form, binding.JSON); err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
 		return
 	}
 	form.Id, _ = strconv.Atoi(id)
 	err := s.productService.UpdateOne(form)
-	if err != nil {		
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"message": err.Error()},
-		)
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		gin.H{"message": "successfully updated"},
-	)
+	utils.HandleResponse(c, "successfully updated", http.StatusOK, c.Request.Method, "")
+
 }
 
 func (s *Product) DeleteByPK(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	product, err := s.productService.GetByPK(id)
-	if err != nil {		
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"message": err.Error()},
-		)
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
 	if product == nil {
-		c.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"message": "product not found",
-			},
-		)
+		utils.HandleErrorResponse(c, http.StatusNotFound, c.Request.Method, "product not found")
 		return
 	}
 
 	errDelete := s.productService.DeleteOne(product.Id)
 
 	if errDelete != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"message": err.Error()},
-		)
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
 	if product == nil {
-		c.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"message": "product not found",
-			},
-		)
+		utils.HandleErrorResponse(c, http.StatusNotFound, c.Request.Method, err)
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		gin.H{"product": product},
-	)
+	utils.HandleResponse(c, "successfully deleted", http.StatusOK, c.Request.Method, "")
+
 }
