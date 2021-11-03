@@ -20,7 +20,10 @@ func main()  {
 		msg := fmt.Sprintf("An error occured : %s", err.Error())
 		panic(msg)
 	}
+	
 	productController := controllers.NewProduct(conn)
+	userController := controllers.NewUserController(conn)
+
 	if err != nil {
 		msg := fmt.Sprintf("An error occured : %s", err.Error())
 		panic(msg)
@@ -33,6 +36,13 @@ func main()  {
 	r.POST("/products", productController.Create)
 	r.PUT("/products/:id", productController.Update)
 	r.DELETE("products/:id", productController.DeleteByPK)
+
+	r.POST("/users", userController.Register)
+	r.POST("/users/login", userController.Login)
+	r.GET("/users", userController.Get)
+	r.GET("users/:id", userController.GetByPK)
+	r.PUT("/users/:id", userController.Update)
+	r.DELETE("users/:id", userController.DeleteByPK)
 	
 	r.Run(":8080")
 }
