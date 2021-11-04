@@ -6,6 +6,7 @@ import (
 	"hermes/middlewares"
 	"hermes/models/sql"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -32,7 +33,16 @@ func main()  {
 	}
 
 	r := gin.Default()
-
+	
+	cwd, _ := os.Getwd()
+	imagesPath := filepath.Join(cwd, "images")
+	if _, err := os.Stat(imagesPath); err != nil {
+		if os.IsNotExist(err) {
+			os.Mkdir(imagesPath, 0755)
+		}
+	}
+	r.Static("/images", filepath.Join(cwd, "images"))
+	
 	r.POST("/users", userController.Register)
 	r.POST("/users/login", userController.Login)
 

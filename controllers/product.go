@@ -1,14 +1,16 @@
 package controllers
 
 import (
+	"fmt"
 	"hermes/controllers/entity"
 	"hermes/models/product/repo"
 	"hermes/utils"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -45,13 +47,37 @@ func (s *Product) GetByPK(c *gin.Context) {
 
 func (s *Product) Create(c *gin.Context) {
 	var form entity.ProductInput
-	if err := c.ShouldBindWith(&form, binding.JSON); err != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
+	sku := c.PostForm("sku")
+	name := c.PostForm("name")
+	image, _ := c.FormFile("display")
+	if sku == "" {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "sku data required")
 		return
 	}
-	err := s.productService.InsertOne(form)
-	if err != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
+	if name == "" {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "name data required")
+		return
+	}
+	if image == nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "image data required")
+		return
+	}
+	workDirPath, _ := os.Getwd()
+	dst := filepath.Join(workDirPath, "images", image.Filename)
+	if image != nil {
+		errSaveImage := c.SaveUploadedFile(image, dst)
+		if errSaveImage != nil {
+			fmt.Printf("an error occured when save image : %s", errSaveImage.Error())
+		}
+	}
+
+	form.Display = os.Getenv("ROOT_URI") + "/images/" + image.Filename
+	form.Name = name
+	form.Sku = sku
+
+	errInsert := s.productService.InsertOne(form)
+	if errInsert != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, errInsert)
 		return
 	}
 	utils.HandleResponse(c, "successfully created", http.StatusCreated, c.Request.Method, "")
@@ -60,10 +86,33 @@ func (s *Product) Create(c *gin.Context) {
 func (s *Product) Update(c *gin.Context) {
 	var form entity.ProductInput
 	id := c.Param("id")
-	if err := c.ShouldBindWith(&form, binding.JSON); err != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
+	sku := c.PostForm("sku")
+	name := c.PostForm("name")
+	image, _ := c.FormFile("display")
+	if sku == "" {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "sku data required")
 		return
 	}
+	if name == "" {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "name data required")
+		return
+	}
+	if image == nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "image data required")
+		return
+	}
+	workDirPath, _ := os.Getwd()
+	dst := filepath.Join(workDirPath, "images", image.Filename)
+	if image != nil {
+		errSaveImage := c.SaveUploadedFile(image, dst)
+		if errSaveImage != nil {
+			fmt.Printf("an error occured when save image : %s", errSaveImage.Error())
+		}
+	}
+
+	form.Display = os.Getenv("ROOT_URI") + "/images/" + image.Filename
+	form.Name = name
+	form.Sku = sku
 	form.Id, _ = strconv.Atoi(id)
 	err := s.productService.UpdateOne(form)
 	if err != nil {
