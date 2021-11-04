@@ -29,6 +29,11 @@ func (s *User) Register(c *gin.Context) {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
 		return
 	}
+	hashedPassword, error := utils.GeneratePassword(input.Password)
+	if error != nil {
+		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, error)
+	}
+	input.Password = *hashedPassword
 	err := s.UserService.Create(input)
 	if err != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
@@ -74,7 +79,8 @@ func (s *User) Login(c *gin.Context) {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "username or password incorrect")
 		return
 	}
-	if user.Password != input.Password {
+	isValid := utils.ComparePassword(input.Password, user.Password)
+	if isValid != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "username or password incorrect")
 		return
 	}

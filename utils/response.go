@@ -25,7 +25,6 @@ func HandleResponse(c *gin.Context, message string, code int, method string, dat
 	if code >= 400 {
 		defer c.AbortWithStatus(code)
 	}
-	return
 }
 
 func HandleErrorResponse(c *gin.Context, code int, method string, err interface{}) {
@@ -35,5 +34,4 @@ func HandleErrorResponse(c *gin.Context, code int, method string, err interface{
 		Error:      err,
 	})
 	defer c.AbortWithStatus(code)
-	return
 }
