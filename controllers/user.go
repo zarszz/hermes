@@ -25,8 +25,8 @@ func NewUserController(conn *sqlx.DB) *User {
 
 func (s *User) Register(c *gin.Context) {
 	var input entity.UserRegistrationInput
-	if c.ShouldBindWith(&input, binding.JSON) != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
+	if err := c.ShouldBindWith(&input, binding.JSON); err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err.Error())
 		return
 	}
 	hashedPassword, error := utils.GeneratePassword(input.Password)
@@ -45,7 +45,7 @@ func (s *User) Register(c *gin.Context) {
 func (s *User) Get(c *gin.Context) {
 	users, err := s.UserService.GetAll()
 	if err != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err.Error())
 		return
 	}
 	utils.HandleResponse(c, "success retrieve data", http.StatusOK, c.Request.Method, users.Users)
@@ -67,8 +67,8 @@ func (s *User) GetByPK(c *gin.Context) {
 
 func (s *User) Login(c *gin.Context) {
 	var input entity.UserLoginInput
-	if (c.ShouldBindWith(&input, binding.JSON)) != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
+	if err := c.ShouldBindWith(&input, binding.JSON); err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err.Error())
 		return
 	}
 	user, err := s.UserService.GetByEmail(input.Email)
@@ -98,8 +98,8 @@ func (s *User) Login(c *gin.Context) {
 func (s *User) Update(c *gin.Context) {
 	var form entity.UserUpdateInput
 	id := c.Param("id")
-	if c.ShouldBindWith(&form, binding.JSON) != nil {
-		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
+	if err := c.ShouldBindWith(&form, binding.JSON); err != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err.Error())
 		return
 	}
 	userId, _ := strconv.Atoi(id)
