@@ -29,9 +29,23 @@ func (s *User) Register(c *gin.Context) {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err.Error())
 		return
 	}
+	user, getByEmailErr := s.UserService.GetByEmail(input.Email)
+	if getByEmailErr != nil {
+		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, getByEmailErr.Error())
+		return
+	}
+	if len(input.Password) < 8 {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "password should contain at least 8 characters")
+		return
+	}
+	if user != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "email already used")
+		return
+	}
 	hashedPassword, error := utils.GeneratePassword(input.Password)
 	if error != nil {
 		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, error)
+		return
 	}
 	input.Password = *hashedPassword
 	err := s.UserService.Create(input)
@@ -100,6 +114,15 @@ func (s *User) Update(c *gin.Context) {
 	id := c.Param("id")
 	if err := c.ShouldBindWith(&form, binding.JSON); err != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err.Error())
+		return
+	}
+	user, getByEmailErr := s.UserService.GetByEmail(form.Email)
+	if getByEmailErr != nil {
+		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, getByEmailErr.Error())
+		return
+	}
+	if user != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "email already used")
 		return
 	}
 	userId, _ := strconv.Atoi(id)

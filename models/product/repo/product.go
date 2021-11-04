@@ -38,6 +38,19 @@ func (s *ProductService) GetByPK(id int) (*models.Product, error) {
 	return &product[0], nil
 }
 
+func (s *ProductService) GetBySKU(sku string) (*models.Product, error) {
+	query := `SELECT * FROM product WHERE sku = $1`
+	product := []models.Product{}
+	err := s.connection.Select(&product, query, sku)
+	if err != nil {
+		return nil, err
+	}
+	if len(product) == 0{
+		return nil, nil
+	}
+	return &product[0], nil
+}
+
 func (s *ProductService) InsertOne(product entity.ProductInput) error {
 	query := `INSERT INTO product(sku, name, display) VALUES($1, $2, $3)`
 

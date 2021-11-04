@@ -62,6 +62,15 @@ func (s *Product) Create(c *gin.Context) {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "image data required")
 		return
 	}
+	product, err := s.productService.GetBySKU(sku)
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, err.Error())
+		return
+	}
+	if product != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "sku is already used")
+		return
+	}
 	workDirPath, _ := os.Getwd()
 	dst := filepath.Join(workDirPath, "images", image.Filename)
 	if image != nil {
@@ -99,6 +108,15 @@ func (s *Product) Update(c *gin.Context) {
 	}
 	if image == nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "image data required")
+		return
+	}
+	product, finSkuErr := s.productService.GetBySKU(sku)
+	if finSkuErr != nil {
+		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, finSkuErr.Error())
+		return
+	}
+	if product != nil {
+		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "sku is already used")
 		return
 	}
 	workDirPath, _ := os.Getwd()
