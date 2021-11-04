@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"hermes/controllers"
+	"hermes/middlewares"
 	"hermes/models/sql"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -31,18 +33,23 @@ func main()  {
 
 	r := gin.Default()
 
-	r.GET("/products", productController.Get)
-	r.GET("/products/:id", productController.GetByPK)
-	r.POST("/products", productController.Create)
-	r.PUT("/products/:id", productController.Update)
-	r.DELETE("products/:id", productController.DeleteByPK)
-
 	r.POST("/users", userController.Register)
 	r.POST("/users/login", userController.Login)
-	r.GET("/users", userController.Get)
-	r.GET("users/:id", userController.GetByPK)
-	r.PUT("/users/:id", userController.Update)
-	r.DELETE("users/:id", userController.DeleteByPK)
+
+	authorized := r.Group("/")
+	authorized.Use(middlewares.AuthMiddleware())
+	{
+		authorized.GET("/products", productController.Get)
+		authorized.GET("/products/:id", productController.GetByPK)
+		authorized.POST("/products", productController.Create)
+		authorized.PUT("/products/:id", productController.Update)
+		authorized.DELETE("products/:id", productController.DeleteByPK)
 	
-	r.Run(":8080")
+		authorized.GET("/users", userController.Get)
+		authorized.GET("users/:id", userController.GetByPK)
+		authorized.PUT("/users/:id", userController.Update)
+		authorized.DELETE("users/:id", userController.DeleteByPK)
+	}	
+	
+	r.Run(":" + os.Getenv("LISTEN_PORT"))
 }

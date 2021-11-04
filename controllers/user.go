@@ -15,10 +15,12 @@ import (
 
 type User struct {
 	UserService *repo.UserService
+	JWTService  *utils.JWTService
 }
 
 func NewUserController(conn *sqlx.DB) *User {
-	return &User{UserService: repo.NewUserService(conn)}
+	jwtService := utils.NewJWTService()
+	return &User{UserService: repo.NewUserService(conn), JWTService: jwtService}
 }
 
 func (s *User) Register(c *gin.Context) {
@@ -37,7 +39,7 @@ func (s *User) Register(c *gin.Context) {
 
 func (s *User) Get(c *gin.Context) {
 	users, err := s.UserService.GetAll()
-	if err != nil {		
+	if err != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
@@ -47,7 +49,7 @@ func (s *User) Get(c *gin.Context) {
 func (s *User) GetByPK(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	user, err := s.UserService.GetByPK(id)
-	if err != nil {		
+	if err != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
@@ -58,7 +60,7 @@ func (s *User) GetByPK(c *gin.Context) {
 	utils.HandleResponse(c, "successfully retrieve data", http.StatusOK, c.Request.Method, user)
 }
 
-func (s *User) Login(c *gin.Context)  {
+func (s *User) Login(c *gin.Context) {
 	var input entity.UserLoginInput
 	if (c.ShouldBindWith(&input, binding.JSON)) != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "invalid data")
@@ -76,7 +78,15 @@ func (s *User) Login(c *gin.Context)  {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, "username or password incorrect")
 		return
 	}
-	utils.HandleResponse(c, "login success", http.StatusOK, c.Request.Method, user)
+	token, err := s.JWTService.Generate(strconv.Itoa(user.Id))
+	if err != nil {
+		utils.HandleErrorResponse(c, http.StatusInternalServerError, c.Request.Method, "failed to generate token")
+		return
+	}
+	utils.HandleResponse(c, "login success", http.StatusOK, c.Request.Method, gin.H{
+		"user":  user,
+		"token": token,
+	})
 }
 
 func (s *User) Update(c *gin.Context) {
@@ -88,7 +98,7 @@ func (s *User) Update(c *gin.Context) {
 	}
 	userId, _ := strconv.Atoi(id)
 	err := s.UserService.UpdateOne(form, userId)
-	if err != nil {		
+	if err != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
@@ -98,7 +108,7 @@ func (s *User) Update(c *gin.Context) {
 func (s *User) DeleteByPK(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	user, err := s.UserService.GetByPK(id)
-	if err != nil {		
+	if err != nil {
 		utils.HandleErrorResponse(c, http.StatusBadRequest, c.Request.Method, err)
 		return
 	}
@@ -115,4 +125,3 @@ func (s *User) DeleteByPK(c *gin.Context) {
 	}
 	utils.HandleResponse(c, "delete success", http.StatusOK, c.Request.Method, "")
 }
-
